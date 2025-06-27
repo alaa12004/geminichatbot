@@ -2,49 +2,47 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
 
+
 genai.configure(api_key="AIzaSyBjO-eYYJR7DRS-GiDROV3jbsYwymz79EQ")
 
-model = genai.GenerativeModel('gemini-1.5-flash')
-
-app = Flask(__name__)
-CORS(app)
+model = genai.GenerativeModel(model_name="gemini-1.5-flash")
 
 
-chat = model.start_chat(history=[
     {
         "role": "user",
         "parts": [
             """
-After showing code, explain it step-by-step in simple sentences.
+🔸 Answer based on the language of the question (Arabic or English).
+🔸 After showing any code, explain it step-by-step in simple sentences.
+🔸 Follow this answering style:
+1. Short and clear summary of the concept.
+2. Bullet points for key information.
+3. Code examples inside code blocks if needed.
+4. Line-by-line code explanation.
+5. Keep it neat, easy to read, and avoid long paragraphs.
 
-- Keep answers clear, focused, and professional.
-- Answer in the same language the user used. If the user asks in Arabic, answer in Arabic. If the user asks in English, answer in English.
-
-✅ Answering Pattern:
-1. Start with a short summary of the concept.
-2. Then list important information in bullet points.
-3. Show code examples if it's about programming.
-4. Explain the code line by line.
-5. Avoid large paragraphs. Keep things clean, simple, and easy to scan.
-
-✅ Example:
-👉 If asked What is Python?, answer like this:
-
+✅ Example of how to answer:
+👉 What is Python?
 ---
 Python is a programming language that is simple, readable, and widely used.
 
-- Easy to learn: Python has a simple syntax similar to the English language.
-- Flexible: Supports different programming paradigms like OOP (Object-Oriented Programming) and procedural programming.
-- Rich libraries: For example:
-  - Data Science: pandas, numpy
-  - Machine Learning: TensorFlow, scikit-learn
-  - Web development: Flask, Django
-- Open-source: Free to use with a large supportive community.
-- Used for: Web development, data analysis, AI, automation, games, and more.
-            """
+- Easy to learn: Python has simple syntax.
+- Flexible: Supports OOP and procedural programming.
+- Rich libraries:
+  - Data: pandas, numpy
+  - ML: TensorFlow, scikit-learn
+  - Web: Flask, Django
+- Open-source and free.
+- Used in web development, data analysis, AI, automation, and more.
+
+✅ Always answer in this clean and structured style.
+"""
         ]
     }
 ])
+
+app = Flask(__name__)
+CORS(app)
 
 @app.route("/chat", methods=["POST"])
 def chat_api():
@@ -55,12 +53,7 @@ def chat_api():
     except Exception as e:
         return jsonify({"reply": f"حدث خطأ: {str(e)}"}), 500
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
-
-
-    except Exception as e:
-        return jsonify({"reply": f"حدث خطأ: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
