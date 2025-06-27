@@ -14,9 +14,10 @@ def chat_api():
     try:
         user_input = request.json["message"]
 
-    
-        chat = model.start_chat(
-            system_prompt="""
+        
+        chat = model.start_chat()
+
+        system_prompt_text = """
 You are a friendly and helpful assistant designed to teach children programming in a fun and simple way. 🧑‍💻🎉
 
 When answering questions:
@@ -37,13 +38,16 @@ When answering questions:
        ✅ A variable is like a box 🗳️ that holds information.
        color = "red"
        print(color)
+"""
 
-            """
-        )
+        
+        full_prompt = f"{system_prompt_text}\nUser: {user_input}"
 
-      
-        response = chat.send_message(user_input)
+
+        response = chat.send_message(full_prompt)
+
         return jsonify({"reply": response.text})
+
     except Exception as e:
         return jsonify({"reply": f"حدث خطأ: {str(e)}"}), 500
 
