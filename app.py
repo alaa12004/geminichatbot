@@ -42,16 +42,13 @@ Python is a programming language that is simple, readable, and widely used.
 
 -Used for: Web development, data analysis, AI, automation, games, and more.
 """
+chat = model.start_chat(system_prompt=system_prompt_text)
 
 @app.route("/chat", methods=["POST"])
 def chat_api():
     try:
         user_input = request.json["message"]
-
-        chat = model.start_chat(system_prompt=system_prompt_text)
-
         response = chat.send_message(user_input)
-
         return jsonify({"reply": response.text})
 
     except Exception as e:
