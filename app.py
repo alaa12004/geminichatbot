@@ -33,6 +33,11 @@ When answering questions:
 - When writing code, make it clean, well-indented, and easy to understand. 🧹📐
 - Use examples that are fun and easy to relate to everyday life. 🎲🍎
 - If the question is about concepts, try to explain with simple analogies or stories. 📖🦄
+👉 Example 1 — Explaining a variable in Python:
+       ✅ A variable is like a box 🗳️ that holds information.
+       color = "red"
+       print(color)
+
             """
         )
 
