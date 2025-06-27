@@ -3,13 +3,10 @@ from flask_cors import CORS
 import google.generativeai as genai
 
 
-# إعداد مفتاح API
-genai.configure(api_key="AIzaSyBjO-eYYJR7DRS-GiDROV3jbsYwymz79EQ")
 
-# اختيار الموديل
+genai.configure(api_key="AIzaSyBjO-eYYJR7DRS-GiDROV3jbsYwymz79EQ")
 model = genai.GenerativeModel(model_name="gemini-1.5-flash")
 
-# بدء محادثة مع تعليمات واضحة
 chat = model.start_chat(history=[
     {
         "role": "user",
