@@ -3,25 +3,32 @@ from flask_cors import CORS
 import google.generativeai as genai
 
 
+# إعداد مفتاح API
 genai.configure(api_key="AIzaSyBjO-eYYJR7DRS-GiDROV3jbsYwymz79EQ")
 
+# اختيار الموديل
 model = genai.GenerativeModel(model_name="gemini-1.5-flash")
 
-
+# بدء محادثة مع تعليمات واضحة
+chat = model.start_chat(history=[
     {
         "role": "user",
         "parts": [
             """
-🔸 Answer based on the language of the question (Arabic or English).
-🔸 After showing any code, explain it step-by-step in simple sentences.
-🔸 Follow this answering style:
-1. Short and clear summary of the concept.
-2. Bullet points for key information.
-3. Code examples inside code blocks if needed.
-4. Line-by-line code explanation.
-5. Keep it neat, easy to read, and avoid long paragraphs.
+✅ تعليمات مهمة:
+- جاوب بنفس لغة السؤال (عربي أو إنجليزي).
+- بعد عرض أي كود، اشرحه خطوة بخطوة.
+- خلي الإجابة منظمة وسهلة، واتبع هذا الشكل:
 
-✅ Example of how to answer:
+1. ملخص قصير للفكرة.
+2. نقاط رئيسية مختصرة.
+3. أمثلة كود إذا لزم.
+4. شرح الكود سطر بسطر.
+5. ابتعد عن الفقرات الطويلة.
+6. المعلومات المهمة او النقاط المهمة خليها بخط غامق.
+
+
+✅ مثال للإجابة:
 👉 What is Python?
 ---
 Python is a programming language that is simple, readable, and widely used.
@@ -35,25 +42,33 @@ Python is a programming language that is simple, readable, and widely used.
 - Open-source and free.
 - Used in web development, data analysis, AI, automation, and more.
 
-✅ Always answer in this clean and structured style.
+✅ دائماً جاوب بهيك شكل.
 """
         ]
     }
 ])
 
+
 app = Flask(__name__)
 CORS(app)
+
+
 
 @app.route("/chat", methods=["POST"])
 def chat_api():
     try:
         user_input = request.json["message"]
+
+     
         response = chat.send_message(user_input)
+
         return jsonify({"reply": response.text})
+
     except Exception as e:
         return jsonify({"reply": f"حدث خطأ: {str(e)}"}), 500
 
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
 
