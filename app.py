@@ -23,14 +23,8 @@ system_prompt = """
 
 ✅ Always follow this format.
 """
-
-# Create chat session
 chat = model.start_chat()
-
-# Send system prompt as the first message to set the context
 chat.send_message(system_prompt)
-
-# Set up Flask app
 app = Flask(__name__)
 CORS(app)
 
