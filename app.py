@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
 
+
 genai.configure(api_key="AIzaSyBjO-eYYJR7DRS-GiDROV3jbsYwymz79EQ")
 model = genai.GenerativeModel(model_name="gemini-1.5-flash")
 
@@ -43,8 +44,7 @@ def chat_api():
     try:
         user_input = request.json["message"]
 
-       
-        prompt = f"{system_prompt}\n\nUser: {user_input}"
+        prompt = f"{system_prompt}\n\n{user_input}"
 
         response = model.generate_content(prompt)
 
@@ -55,6 +55,7 @@ def chat_api():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
 
 
 
