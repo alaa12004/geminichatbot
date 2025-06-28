@@ -2,10 +2,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
 
-
 genai.configure(api_key="AIzaSyBjO-eYYJR7DRS-GiDROV3jbsYwymz79EQ")
-model = genai.GenerativeModel(model_name="gemini-1.5-flash")
 
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 system_prompt = """
 ✅ تعليمات مهمة:
@@ -19,20 +18,6 @@ system_prompt = """
 5. ابتعد عن الفقرات الطويلة.
 6. المعلومات المهمة أو النقاط المهمة خليها بخط غامق.
 
-✅ مثال للإجابة:
-👉 What is Python?
----
-Python is a programming language that is simple, readable, and widely used.
-
-- Easy to learn: Python has simple syntax.
-- Flexible: Supports OOP and procedural programming.
-- Rich libraries:
-  - Data: pandas, numpy
-  - ML: TensorFlow, scikit-learn
-  - Web: Flask, Django
-- Open-source and free.
-- Used in web development, data analysis, AI, automation, and more.
-
 ✅ دائماً جاوب بهيك شكل.
 """
 
@@ -44,9 +29,14 @@ def chat_api():
     try:
         user_input = request.json["message"]
 
-        prompt = f"{system_prompt}\n\n{user_input}"
+        chat = model.start_chat(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_input}
+            ]
+        )
 
-        response = model.generate_content(prompt)
+        response = chat.send_message(user_input)
 
         return jsonify({"reply": response.text})
 
@@ -55,6 +45,7 @@ def chat_api():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
+
 
 
 
