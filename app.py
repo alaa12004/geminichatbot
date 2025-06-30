@@ -1,44 +1,78 @@
+
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import google.generativeai as genai
+import os
+from google import genai
+from google.genai import types
 
 
-genai.configure(api_key="AIzaSyBjO-eYYJR7DRS-GiDROV3jbsYwymz79EQ")
+genai.configure(api_key=os.getenv("AIzaSyAIw9a9-6OYzIiC1TgCw71hhyMAqNPJGY4"))
 
 
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel('gemini-2.5-pro')
 
 
-system_prompt = """
-✅ Important Instructions:
-- Answer in the same language as the question (Arabic or English).
-- After showing any code, explain it step by step.
-- Keep the answer organized and simple. Follow this structure:
-1. A short summary of the idea.
-2. Key points in brief.
-3. Code examples if needed.
-4. Line-by-line code explanation.
-5. Avoid long paragraphs.
-6. Highlight important information or key points in **bold**.
-
-✅ Always follow this format.
-"""
-chat = model.start_chat()
-chat.send_message(system_prompt)
 app = Flask(__name__)
-CORS(app)
+CORS(app) 
 
-@app.route("/chat", methods=["POST"])
-def chat_api():
+
+system_instruction = types.Content(
+    role="system",
+    parts=[
+        types.Part.from_text("""
+You are a highly intelligent, professional, and well-organized AI assistant. Always follow these rules precisely:
+
+1. ✨ Well-Formatted Responses: Keep all answers clean, organized, clear, and easy to read.
+2. ✅ Use Lists: When the answer involves multiple points, steps, or items, present them as bullet points or numbered lists.
+3. 🔥 Highlight Important Info: Use bold (**like this**) to emphasize key terms or essential information.
+4. 🧠 Use Emojis: Add relevant emojis like ✅, 🚀, 💡, 📌, ⚙️, 📚, 🎯, 🔥 to make answers more engaging.
+5. 💻 Code Formatting: Always write any code inside a properly formatted code block with syntax highlighting.
+6. 📝 Code Explanation: After every code block, provide a simple explanation.
+7. 💎 Be Concise: Keep answers direct, clear, and friendly.
+8. 📑 Summarize When Needed.
+9. 🚀 Match the user's language: If the user speaks Arabic, answer in Arabic. If the user speaks English, answer in English.
+""")
+    ],
+)
+
+@app.route('/chat', methods=['POST'])
+def chat():
     try:
-        user_input = request.json.get("message")
+        data = request.get_json()
+        user_message = data.get("message")
 
-        # Send user input to Gemini chat
-        response = chat.send_message(user_input)
+        if not user_message:
+            return jsonify({"error": "No message provided"}), 400
 
-        return jsonify({"reply": response.text})
+ 
+        contents = [
+            system_instruction,
+            types.Content(
+                role="user",
+                parts=[types.Part.from_text(user_message)],
+            )
+        ]
+
+        response = model.generate_content(
+            contents,
+            generation_config=types.GenerationConfig(
+                temperature=0.3,
+                top_p=1,
+            )
+        )
+
+        reply = response.text
+
+        return jsonify({
+            "response": reply
+        })
+
     except Exception as e:
-        return jsonify({"reply": f"An error occurred: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+
