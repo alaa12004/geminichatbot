@@ -11,7 +11,7 @@ api_key = os.getenv("API_KEY")
 if not api_key:
     print("⚠️ يرجى إضافة API_KEY في إعدادات Render")
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel('gemini-pro')
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 @app.route('/chat', methods=['POST'])
 def chat():
