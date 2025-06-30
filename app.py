@@ -1,12 +1,12 @@
 from flask import Flask, request, jsonify
 import google.generativeai as genai
 import os
-from dotenv import load_dotenv 
+from dotenv import load_dotenv
 
-load_dotenv() 
+load_dotenv()
 
 app = Flask(__name__)
-genai.configure(api_key=os.getenv("API_KEY"))
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel('gemini-pro')
 
 @app.route('/chat', methods=['POST'])
@@ -29,11 +29,11 @@ def chat():
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
-                temperature=0.3, 
-                max_output_tokens=1000  
+                temperature=0.3,
+                max_output_tokens=1000
             )
         )
-      
+        
         formatted_reply = format_response(response.text)
         return jsonify({"reply": formatted_reply})
     
@@ -41,7 +41,7 @@ def chat():
         return jsonify({"error": str(e)})
 
 def format_response(text):
-  """تحسين تنسيق الكود والعناوين"""
+    """تحسين تنسيق الكود والعناوين"""
     if "```" in text:
         text = text.replace("```python", "<pre><code>")
         text = text.replace("```", "</code></pre>")
@@ -49,4 +49,3 @@ def format_response(text):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-
