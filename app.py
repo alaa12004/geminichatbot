@@ -1,50 +1,34 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
-import os  
+import os
 
 app = Flask(__name__)
 CORS(app)
-genai.configure(api_key=os.getenv("API_KEY")) 
+
+# تحقق من وجود المفتاح السري
+api_key = os.getenv("API_KEY")
+if not api_key:
+    print("⚠️ يرجى إضافة API_KEY في إعدادات Render")
+genai.configure(api_key=api_key)
 model = genai.GenerativeModel('gemini-pro')
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    user_message = request.json.get('message')
-    
-    prompt = f"""
-    أنت مساعد تعليمي للأطفال. اتبع هذه القواعد:
-    1. إذا كان السؤال غير برمجي: أجب بنقاط واضحة وعبارات بسيطة.
-    2. إذا كان السؤال عن البرمجة:
-       - ضع الكود داخل إطار مظلل.
-       - اشرح كل سطر بكلمات سهلة.
-    3. استخدم العناوين مثل **"الشرح:"** و **"مثال:"**.
-    4. تجنب الجمل الطويلة غير المنظمة.
-
-    السؤال: {user_message}
-    """
-    
     try:
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.3,
-                max_output_tokens=1000
-            )
-        )
-        
-        formatted_reply = format_response(response.text)
-        return jsonify({"reply": formatted_reply})
-    
-    except Exception as e:
-        return jsonify({"error": str(e)})
+        user_message = request.json.get('message')
+        if not user_message:
+            return jsonify({"error": "الرسالة فارغة"}), 400
 
-def format_response(text):
-    """تحسين تنسيق الكود والعناوين"""
-    if "```" in text:
-        text = text.replace("```python", "<pre><code>")
-        text = text.replace("```", "</code></pre>")
-    return text
+        prompt = f"أجب بلغة عربية بسيطة ومناسبة للأطفال: {user_message}"
+        
+        response = model.generate_content(prompt)
+        reply = response.text if response.text else "لم أفهم السؤال"
+        
+        return jsonify({"reply": reply, "status": "success"})
+
+    except Exception as e:
+        return jsonify({"error": str(e), "status": "error"}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
