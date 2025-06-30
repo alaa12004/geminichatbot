@@ -1,20 +1,19 @@
-
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import google.generativeai as genai
+from google.generativeai import types
 import os
-from google import genai
-from google.genai import types
 
 
-genai.configure(api_key=os.getenv("AIzaSyAIw9a9-6OYzIiC1TgCw71hhyMAqNPJGY4"))
+
+genai.configure(api_key=os.getenv("API_KEY"))
 
 
 model = genai.GenerativeModel('gemini-2.5-pro')
 
 
 app = Flask(__name__)
-CORS(app) 
+CORS(app)
 
 
 system_instruction = types.Content(
@@ -36,6 +35,7 @@ You are a highly intelligent, professional, and well-organized AI assistant. Alw
     ],
 )
 
+
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
@@ -45,7 +45,6 @@ def chat():
         if not user_message:
             return jsonify({"error": "No message provided"}), 400
 
- 
         contents = [
             system_instruction,
             types.Content(
@@ -75,4 +74,5 @@ def chat():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
 
