@@ -1,59 +1,52 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 import google.generativeai as genai
 import os
+from dotenv import load_dotenv 
 
-
-genai.configure(api_key=os.getenv("API_KEY"))
+load_dotenv() 
 
 app = Flask(__name__)
-CORS(app)
-
-
-system_prompt = """
-You are a highly intelligent, professional, and well-organized AI assistant. Always follow these rules precisely:
-
-1. ✨ Well-Formatted Responses: Keep all answers clean, organized, clear, and easy to read.
-2. ✅ Use Lists: When the answer involves multiple points, steps, or items, present them as bullet points or numbered lists.
-3. 🔥 Highlight Important Info: Use bold (**like this**) to emphasize key terms or essential information.
-4. 🧠 Use Emojis: Add relevant emojis like ✅, 🚀, 💡, 📌, ⚙️, 📚, 🎯, 🔥 to make answers more engaging.
-5. 💻 Code Formatting: Always write any code inside a properly formatted code block with syntax highlighting.
-6. 📝 Code Explanation: After every code block, provide a simple explanation.
-7. 💎 Be Concise: Keep answers direct, clear, and friendly.
-8. 📑 Summarize When Needed.
-9. 🚀 Match the user's language: If the user speaks Arabic, answer in Arabic. If the user speaks English, answer in English.
-"""
+genai.configure(api_key=os.getenv("API_KEY"))
+model = genai.GenerativeModel('gemini-pro')
 
 @app.route('/chat', methods=['POST'])
 def chat():
+    user_message = request.json.get('message')
+    
+    prompt = f"""
+    أنت مساعد تعليمي للأطفال. اتبع هذه القواعد:
+    1. إذا كان السؤال غير برمجي: أجب بنقاط واضحة وعبارات بسيطة.
+    2. إذا كان السؤال عن البرمجة:
+       - ضع الكود داخل إطار مظلل.
+       - اشرح كل سطر بكلمات سهلة.
+    3. استخدم العناوين مثل **"الشرح:"** و **"مثال:"**.
+    4. تجنب الجمل الطويلة غير المنظمة.
+
+    السؤال: {user_message}
+    """
+    
     try:
-        data = request.get_json()
-        user_message = data.get("message")
-
-        if not user_message:
-            return jsonify({"error": "No message provided"}), 400
-
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
-        ]
-
-        response = genai.chat.completions.create(
-            model="gemini-2.5-pro",
-            messages=messages,
-            temperature=0.3,
-            top_p=1,
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.3, 
+                max_output_tokens=1000  
+            )
         )
-
-        reply = response.choices[0].message.content
-
-        return jsonify({"response": reply})
-
+      
+        formatted_reply = format_response(response.text)
+        return jsonify({"reply": formatted_reply})
+    
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)})
 
+def format_response(text):
+  """تحسين تنسيق الكود والعناوين"""
+    if "```" in text:
+        text = text.replace("```python", "<pre><code>")
+        text = text.replace("```", "</code></pre>")
+    return text
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-
 
