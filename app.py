@@ -1,25 +1,16 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
-from google.generativeai import types
 import os
 
 
-
 genai.configure(api_key=os.getenv("API_KEY"))
-
-
-model = genai.GenerativeModel('gemini-2.5-pro')
-
 
 app = Flask(__name__)
 CORS(app)
 
 
-system_instruction = types.Content(
-    role="system",
-    parts=[
-        types.Part.from_text("""
+system_prompt = """
 You are a highly intelligent, professional, and well-organized AI assistant. Always follow these rules precisely:
 
 1. ✨ Well-Formatted Responses: Keep all answers clean, organized, clear, and easy to read.
@@ -31,10 +22,7 @@ You are a highly intelligent, professional, and well-organized AI assistant. Alw
 7. 💎 Be Concise: Keep answers direct, clear, and friendly.
 8. 📑 Summarize When Needed.
 9. 🚀 Match the user's language: If the user speaks Arabic, answer in Arabic. If the user speaks English, answer in English.
-""")
-    ],
-)
-
+"""
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -45,31 +33,24 @@ def chat():
         if not user_message:
             return jsonify({"error": "No message provided"}), 400
 
-        contents = [
-            system_instruction,
-            types.Content(
-                role="user",
-                parts=[types.Part.from_text(user_message)],
-            )
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message}
         ]
 
-        response = model.generate_content(
-            contents,
-            generation_config=types.GenerationConfig(
-                temperature=0.3,
-                top_p=1,
-            )
+        response = genai.chat.completions.create(
+            model="gemini-2.5-pro",
+            messages=messages,
+            temperature=0.3,
+            top_p=1,
         )
 
-        reply = response.text
+        reply = response.choices[0].message.content
 
-        return jsonify({
-            "response": reply
-        })
+        return jsonify({"response": reply})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 
 if __name__ == '__main__':
