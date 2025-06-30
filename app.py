@@ -1,12 +1,9 @@
 from flask import Flask, request, jsonify
 import google.generativeai as genai
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
+import os  
 
 app = Flask(__name__)
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+genai.configure(api_key=os.getenv("API_KEY")) 
 model = genai.GenerativeModel('gemini-pro')
 
 @app.route('/chat', methods=['POST'])
