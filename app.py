@@ -15,6 +15,7 @@ CORS(app)
 
 # إعداد مفتاح API
 genai.configure(api_key=os.getenv("API_KEY"))
+print("API KEY IS:", os.getenv("API_KEY"))
 
 # إعداد الموديل
 model = genai.GenerativeModel(
