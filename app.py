@@ -3,7 +3,7 @@ from flask_cors import CORS
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
-from datetime import datetime, timedelta
+import re
 
 # تهيئة التطبيق
 app = Flask(__name__)
@@ -11,100 +11,74 @@ CORS(app)
 
 # تحميل المفتاح من البيئة
 load_dotenv()
-api_key = os.getenv("API_KEY")
+api_key = os.getenv("GEMINI_API_KEY")
 
 if not api_key:
-    raise ValueError("❌ يرجى إضافة API_KEY في متغيرات البيئة")
+    raise ValueError("❌ يرجى إضافة GEMINI_API_KEY في متغيرات البيئة")
 
 genai.configure(api_key=api_key)
-model = genai.GenerativeModel('gemini-1.5-pro-latest')
-
-# تخزين المحادثات (في الذاكرة - للإنتاج استخدمي قاعدة بيانات)
-conversations = {}
-
-class Conversation:
-    def __init__(self, user_id):
-        self.user_id = user_id
-        self.history = []
-        self.last_active = datetime.now()
-        self.context = None
-    
-    def add_message(self, role, content):
-        self.history.append({"role": role, "content": content})
-        self.last_active = datetime.now()
-        
-        # تحديث السياق بناء على آخر 3 رسائل
-        self.context = "\n".join(
-            f"{msg['role']}: {msg['content']}" 
-            for msg in self.history[-3:]
-        )
-
-def cleanup_conversations():
-    """حذف المحادثات القديمة (أكثر من 30 دقيقة)"""
-    global conversations
-    now = datetime.now()
-    expired = [
-        user_id for user_id, conv in conversations.items()
-        if now - conv.last_active > timedelta(minutes=30)
-    ]
-    for user_id in expired:
-        del conversations[user_id]
-
-def get_conversation(user_id):
-    """الحصول على محادثة موجودة أو إنشاء جديدة"""
-    cleanup_conversations()
-    if user_id not in conversations:
-        conversations[user_id] = Conversation(user_id)
-    return conversations[user_id]
+model = genai.GenerativeModel('gemini-1.5-pro-latest')  # أحدث نموذج
 
 def format_response(text):
-    """تحسين تنسيق الإجابة"""
-    # تنسيق الأكواد
-    text = text.replace("```python", '<pre class="code-box"><code>')
-    text = text.replace("```", '</code></pre>')
+    """تحسين تنسيق الإجابة مع إضافة التنسيقات المطلوبة"""
+    # إضافة التنسيق للكود
+    text = re.sub(r'```python(.*?)```', 
+                r'<pre class="code-box"><code>\1</code></pre><div class="code-comment">⚙️ الكود السابق يقوم بـ:</div>',
+                text, flags=re.DOTALL)
     
-    # إضافة شرح للكود
-    if '<pre class="code-box">' in text:
-        text += '\n<div class="code-comment">⚙️ الكود السابق يقوم بـ:</div>'
+    # جعل الكلمات المهمة غامقة
+    text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
     
-    # إيموجي للعناوين
+    # تحويل النقاط إلى قوائم منظمة
+    text = re.sub(r'(\d+\.)', r'<br>\1', text)
+    
+    # إضافة إيموجي للعناوين
     text = text.replace("السؤال:", "❓ السؤال:")
     text = text.replace("الجواب:", "💡 الجواب:")
+    text = text.replace("مثال:", "📌 مثال:")
     
     return text
 
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
-        data = request.json
-        user_message = data.get('message', '').strip()
-        user_id = data.get('user_id', 'default')  # يمكن استخدام IP أو معرف مستخدم
+        user_message = request.json.get('message', '').strip()
         
         if not user_message:
             return jsonify({"error": "الرسالة فارغة", "status": "error"}), 400
 
-        # الحصول على المحادثة الحالية
-        conv = get_conversation(user_id)
-        conv.add_message("user", user_message)
-        
-        # بناء البرومبت مع السياق
+        # البرومبت المحسّن
         prompt = f"""
-        أنت مساعد ذكي يحفظ سياق المحادثة. التعليمات:
+        أنت مساعد ذكي متعدد الاستخدامات للأطفال. التعليمات:
         
-        🧠 السياق السابق (آخر 3 رسائل):
-        {conv.context if conv.context else "لا يوجد سياق سابق"}
+        🌟 المطلوب:
+        1. الإجابات المنظمة:
+           - استخدام النقاط المرقمة للشرح
+           - وضع الكود في صندوق خاص مع شرح تحته
+           - جعل الكلمات المهمة **غامقة**
         
-        📌 المطلوب:
-        1. فهم الموضوع الحالي من السياق (مثلاً إذا كان الحديث عن بايثون)
-        2. الإجابة باختصار (3-5 أسطر كحد أقصى)
-        3. وضع الكود في صندوق مع شرح تحته
-        4. استخدام **النصوص الغامقة** للإشارات المهمة
-        5. إضافة إيموجي لطيف 🐍✨ عند الحديث عن مواضيع محددة
+        2. التنسيق:
+           - استخدام إيموجي لطيف 🎯✨💡
+           - الإجابات القصيرة (3-5 أسطر كحد أقصى)
+           - العربية الفصحى فقط
+        
+        3. المحتوى:
+           - فهم جميع الأسئلة (برمجة/علوم/ثقافة عامة)
+           - شرح المفاهيم بطريقة بسيطة
+           - أمثلة عملية عند الطلب
         
         🚫 الممنوعات:
-        - اللهجات العامية
-        - الخروج عن الموضوع
-        - الإجابات الطويلة غير المنظمة
+           - اللهجات العامية
+           - الإجابات الطويلة غير المنظمة
+           - المعلومات غير الدقيقة
+        
+        أمثلة:
+        - السؤال: "شو يعني بايثون؟"
+          الجواب: "**بايثون** لغة برمجة سهلة 🐍✨
+          📌 مميزاتها:
+          1. تستخدم في الذكاء الاصطناعي 🤖
+          2. كتابتها بسيطة وسهلة الفهم
+          3. مثال: ```python\nprint('مرحباً')```"
         
         السؤال الحالي: "{user_message}"
         """
@@ -112,20 +86,22 @@ def chat():
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
-                temperature=0.4,
-                top_p=0.7,
-                max_output_tokens=800
+                temperature=0.3,
+                top_p=0.5,
+                max_output_tokens=500,
+                stop_sequences=["\n\n", "Note:"]
             )
         )
 
         # معالجة الإجابة
-        bot_reply = response.text
-        conv.add_message("assistant", bot_reply)
+        reply = response.text
+        
+        # تطبيق التنسيقات الإضافية
+        formatted_reply = format_response(reply)
         
         return jsonify({
-            "reply": format_response(bot_reply),
-            "status": "success",
-            "conversation_id": user_id
+            "reply": formatted_reply,
+            "status": "success"
         })
 
     except Exception as e:
