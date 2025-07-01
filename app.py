@@ -6,21 +6,19 @@ from google.generativeai import types
 from dotenv import load_dotenv
 
 
+# تحميل متغيرات البيئة
 load_dotenv()
 
-
+# إعداد Flask
 app = Flask(__name__)
 CORS(app)
 
-
+# إعداد مفتاح API
 genai.configure(api_key=os.getenv("API_KEY"))
 
-
-model_name = "models/gemini-1.5-flash-latest"  
-
-
+# إعداد الموديل
 model = genai.GenerativeModel(
-    model_name,
+    "models/gemini-1.5-flash-latest",
     system_instruction="""
 📚 أنت مساعد ذكي داخل موقع تعليمي مخصص للأطفال والطلاب 🎓✨.
 
@@ -43,21 +41,22 @@ model = genai.GenerativeModel(
 """
 )
 
-
+# إعداد خصائص الرد
 generation_config = types.GenerationConfig(
     temperature=0.2,
-    top_p=0.5,
+    top_p=0.7,
     max_output_tokens=1000,
 )
 
 
+# مسار الشات
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
         user_message = request.json.get('message', '').strip()
 
         if not user_message:
-            return jsonify({'error': 'الرسالة فارغة', 'status': 'error'}), 400
+            return jsonify({'error': '⚠️ الرسالة فارغة', 'status': 'error'}), 400
 
         response = model.generate_content(
             user_message,
@@ -65,21 +64,21 @@ def chat():
             safety_settings=[
                 types.SafetySetting(
                     category="HARM_CATEGORY_HARASSMENT",
-                    threshold="BLOCK_MEDIUM_AND_ABOVE",
+                    threshold="BLOCK_MEDIUM_AND_ABOVE"
                 ),
                 types.SafetySetting(
                     category="HARM_CATEGORY_HATE_SPEECH",
-                    threshold="BLOCK_MEDIUM_AND_ABOVE",
+                    threshold="BLOCK_MEDIUM_AND_ABOVE"
                 ),
                 types.SafetySetting(
                     category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                    threshold="BLOCK_MEDIUM_AND_ABOVE",
+                    threshold="BLOCK_MEDIUM_AND_ABOVE"
                 ),
                 types.SafetySetting(
                     category="HARM_CATEGORY_DANGEROUS_CONTENT",
-                    threshold="BLOCK_MEDIUM_AND_ABOVE",
-                ),
-            ],
+                    threshold="BLOCK_MEDIUM_AND_ABOVE"
+                )
+            ]
         )
 
         reply = response.text
@@ -96,9 +95,6 @@ def chat():
         }), 500
 
 
-
+# تشغيل التطبيق
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-
-
-
