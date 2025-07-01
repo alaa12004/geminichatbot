@@ -11,10 +11,10 @@ CORS(app)
 
 # تحميل المفتاح من البيئة
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
+api_key = os.getenv("API_KEY")
 
 if not api_key:
-    raise ValueError("❌ يرجى إضافة GEMINI_API_KEY في متغيرات البيئة")
+    raise ValueError("❌ يرجى إضافة API_KEY في متغيرات البيئة")
 
 genai.configure(api_key=api_key)
 model = genai.GenerativeModel('gemini-1.5-pro-latest')
