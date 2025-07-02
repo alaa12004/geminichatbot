@@ -1,22 +1,18 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import os
 import google.generativeai as genai
 from google.generativeai import types
-
-
-API_KEY = "AIzaSyAwR7Qnzf-PoCZsEm-LiUJ7-MMlTAA5D7A"
-
 
 app = Flask(__name__)
 CORS(app)
 
-
+# حط مفتاح API مباشرة هنا أو استخدم متغير بيئة
+API_KEY = "AIzaSyCZSbfnXNS9KDqzUvktLMkHI4U-SEfcH5A"
 genai.configure(api_key=API_KEY)
-print("✅ API KEY IS:", API_KEY)
-
 
 model = genai.GenerativeModel(
-    "gemini-1.5-flash-latest",  
+    "models/gemini-1.5-flash-latest",
     system_instruction="""
 📚 أنت مساعد ذكي داخل موقع تعليمي مخصص للأطفال والطلاب 🎓✨.
 
@@ -39,7 +35,6 @@ model = genai.GenerativeModel(
 """
 )
 
-# إعداد خصائص الرد
 generation_config = types.GenerationConfig(
     temperature=0.2,
     top_p=0.7,
@@ -50,53 +45,29 @@ generation_config = types.GenerationConfig(
 def chat():
     try:
         user_message = request.json.get('message', '').strip()
-
         if not user_message:
             return jsonify({'error': '⚠️ الرسالة فارغة', 'status': 'error'}), 400
-
-        print(f"👤 User Message: {user_message}")
 
         response = model.generate_content(
             user_message,
             generation_config=generation_config,
             safety_settings=[
-                types.SafetySetting(
-                    category="HARM_CATEGORY_HARASSMENT",
-                    threshold="BLOCK_MEDIUM_AND_ABOVE"
-                ),
-                types.SafetySetting(
-                    category="HARM_CATEGORY_HATE_SPEECH",
-                    threshold="BLOCK_MEDIUM_AND_ABOVE"
-                ),
-                types.SafetySetting(
-                    category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                    threshold="BLOCK_MEDIUM_AND_ABOVE"
-                ),
-                types.SafetySetting(
-                    category="HARM_CATEGORY_DANGEROUS_CONTENT",
-                    threshold="BLOCK_MEDIUM_AND_ABOVE"
-                )
-            ]
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+            ],
         )
 
         reply = response.text
-        print(f"🤖 Bot Reply: {reply}")
-
-        return jsonify({
-            'reply': reply,
-            'status': 'success'
-        })
+        return jsonify({'reply': reply, 'status': 'success'})
 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({
-            'error': str(e),
-            'status': 'error'
-        }), 500
+        return jsonify({'error': str(e), 'status': 'error'}), 500
 
-
-# تشغيل التطبيق
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
 
