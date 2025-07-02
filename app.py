@@ -1,20 +1,22 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import os
 import google.generativeai as genai
 from google.generativeai import types
 
-# إعداد Flask
+
+API_KEY = "AIzaSyAwR7Qnzf-PoCZsEm-LiUJ7-MMlTAA5D7A"
+
+
 app = Flask(__name__)
 CORS(app)
 
-# إعداد مفتاح API
-genai.configure(api_key=os.getenv("API_KEY"))
-print("API KEY IS:", os.getenv("API_KEY"))
 
-# إعداد الموديل
+genai.configure(api_key=API_KEY)
+print("✅ API KEY IS:", API_KEY)
+
+
 model = genai.GenerativeModel(
-    "models/gemini-1.5-flash-latest",
+    "gemini-1.5-flash-latest",  
     system_instruction="""
 📚 أنت مساعد ذكي داخل موقع تعليمي مخصص للأطفال والطلاب 🎓✨.
 
@@ -52,6 +54,8 @@ def chat():
         if not user_message:
             return jsonify({'error': '⚠️ الرسالة فارغة', 'status': 'error'}), 400
 
+        print(f"👤 User Message: {user_message}")
+
         response = model.generate_content(
             user_message,
             generation_config=generation_config,
@@ -76,6 +80,7 @@ def chat():
         )
 
         reply = response.text
+        print(f"🤖 Bot Reply: {reply}")
 
         return jsonify({
             'reply': reply,
@@ -94,3 +99,4 @@ def chat():
 # تشغيل التطبيق
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
