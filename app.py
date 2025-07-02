@@ -3,11 +3,6 @@ from flask_cors import CORS
 import os
 import google.generativeai as genai
 from google.generativeai import types
-from dotenv import load_dotenv
-
-
-# تحميل متغيرات البيئة
-load_dotenv()
 
 # إعداد Flask
 app = Flask(__name__)
@@ -49,8 +44,6 @@ generation_config = types.GenerationConfig(
     max_output_tokens=1000,
 )
 
-
-# مسار الشات
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
@@ -90,6 +83,8 @@ def chat():
         })
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'error': str(e),
             'status': 'error'
