@@ -1,13 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import os
 import google.generativeai as genai
 from google.generativeai import types
 
 app = Flask(__name__)
 CORS(app)
 
-# حط مفتاح API مباشرة هنا أو استخدم متغير بيئة
 API_KEY = "AIzaSyCZSbfnXNS9KDqzUvktLMkHI4U-SEfcH5A"
 genai.configure(api_key=API_KEY)
 
@@ -44,12 +42,15 @@ generation_config = types.GenerationConfig(
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
-        user_message = request.json.get('message', '').strip()
-        if not user_message:
-            return jsonify({'error': '⚠️ الرسالة فارغة', 'status': 'error'}), 400
+        # استقبل قائمة الرسائل كاملة من الواجهة الأمامية
+        messages = request.json.get('messages', [])
 
-        response = model.generate_content(
-            user_message,
+        if not messages:
+            return jsonify({'error': '⚠️ لا توجد رسائل', 'status': 'error'}), 400
+
+        # استخدم generate_chat_completion لإرسال المحادثة كاملة
+        response = model.generate_chat_completion(
+            messages=messages,
             generation_config=generation_config,
             safety_settings=[
                 {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
@@ -59,7 +60,9 @@ def chat():
             ],
         )
 
-        reply = response.text
+        # استخرج رد المساعد
+        reply = response.choices[0].message['content']
+
         return jsonify({'reply': reply, 'status': 'success'})
 
     except Exception as e:
@@ -67,7 +70,6 @@ def chat():
         traceback.print_exc()
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-
-
