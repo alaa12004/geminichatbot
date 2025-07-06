@@ -2,14 +2,16 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
 from google.generativeai import types
+import markdown 
 
 app = Flask(__name__)
 CORS(app)
 
+
 API_KEY = "AIzaSyCZSbfnXNS9KDqzUvktLMkHI4U-SEfcH5A"
 genai.configure(api_key=API_KEY)
 
-# إعداد الموديل مع system prompt
+
 model = genai.GenerativeModel(
     "models/gemini-1.5-flash-latest",
     system_instruction="""
@@ -67,17 +69,6 @@ model = genai.GenerativeModel(
   > "هذا المفهوم يعتبر متقدمًا قليلًا، لكن يمكنني شرحه بطريقة بسيطة! 💡"
 
 ---
-
-✔️ أمثلة توضيحية للإجابات المتوقعة:
-
-🎯 **مثال 1: تعريف متغير في بايثون**
-
-```python
-# تعريف متغير باسم name وتخزين نص بداخله
-name = "Laila"
-# طباعة النص الموجود داخل المتغير
-print(name)
-
 """
 )
 
@@ -96,7 +87,7 @@ def chat_route():
         if not user_message:
             return jsonify({'error': '⚠️ الرسالة فارغة', 'status': 'error'}), 400
 
-       
+        
         response = chat.send_message(
             user_message,
             generation_config=types.GenerationConfig(
@@ -106,15 +97,20 @@ def chat_route():
             )
         )
 
-        reply = response.text.strip()
-        return jsonify({'reply': reply, 'status': 'success'})
+        
+        markdown_reply = response.text.strip()
+        html_reply = markdown.markdown(markdown_reply, extensions=["fenced_code"])
+
+        return jsonify({'reply': html_reply, 'status': 'success'})
 
     except Exception as e:
         import traceback
         traceback.print_exc()
         return jsonify({'error': f'⚠️ حدث خطأ: {str(e)}', 'status': 'error'}), 500
 
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
 
 
