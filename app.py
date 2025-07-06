@@ -6,13 +6,13 @@ from google.generativeai import types
 app = Flask(__name__)
 CORS(app)
 
-
 API_KEY = "AIzaSyCZSbfnXNS9KDqzUvktLMkHI4U-SEfcH5A"
 genai.configure(api_key=API_KEY)
 
+
 model = genai.GenerativeModel(
     "models/gemini-1.5-flash-latest",
-    system_instruction="""
+    system_instruction=""" 
 📚 أنت مساعد تعليمي ذكي داخل موقع تعليمي مخصص للأطفال والطلاب 🎓✨.
 
 ✔️ تعليمات عامة:
@@ -27,7 +27,8 @@ model = genai.GenerativeModel(
 
 ✔️ التعامل مع الكود البرمجي:
 - عندما يُطلب كتابة كود برمجي، اكتب الكود داخل صندوق كود واضح، مثل:  
-  ```python  
+  
+python  
   # كود بايثون هنا  
   print("مرحباً بالعالم")  
 اشرح الكود باختصار تحته، واذكر وظيفة كل جزء مهم.
@@ -92,10 +93,6 @@ model = genai.GenerativeModel(
 
 الإجابة:
 ⚙️ هنا مثال بسيط لكتابة كود بايثون يطبع رسالة:
-
-python
-Copy
-Edit
 print("مرحبًا بالعالم")
 هذا السطر يطلب من الكمبيوتر عرض النص داخل علامات التنصيص. 
 🚀 جرب تشغيله لترى النتيجة! هل تريد كودًا أكثر تعقيدًا؟ 😊
@@ -121,18 +118,22 @@ print("مرحبًا بالعالم")
 السؤال: ما هو أفضل مطعم في المدينة؟
 
 الإجابة:
-❗ هذا السؤال خارج نطاق اختصاصي كمساعد تعليمي. هل ترغب بسؤال عن البرمجة أو موضوع تعليمي؟ 
-"""
+❗ هذا السؤال خارج نطاق اختصاصي كمساعد تعليمي. هل ترغب بسؤال عن البرمجة أو موضوع تعليمي؟
+    """  
 )
 
-generation_config = types.GenerationConfig(
-    temperature=0.2,
-    top_p=0.7,
-    max_output_tokens=1000,
+
+chat = model.start_chat(
+    history=[],
+    generation_config=types.GenerationConfig(
+        temperature=0.2,
+        top_p=0.7,
+        max_output_tokens=1000,
+    )
 )
 
 @app.route('/chat', methods=['POST'])
-def chat():
+def chat_route():
     try:
         data = request.get_json()
 
@@ -143,16 +144,8 @@ def chat():
         if not user_message:
             return jsonify({'error': '⚠️ الرسالة فارغة', 'status': 'error'}), 400
 
-        response = model.generate_content(
-            user_message,
-            generation_config=generation_config,
-            safety_settings=[
-                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
-            ],
-        )
+      
+        response = chat.send_message(user_message)
 
         reply = response.text.strip()
         return jsonify({'reply': reply, 'status': 'success'})
@@ -162,6 +155,6 @@ def chat():
         traceback.print_exc()
         return jsonify({'error': f'⚠️ حدث خطأ: {str(e)}', 'status': 'error'}), 500
 
-
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
